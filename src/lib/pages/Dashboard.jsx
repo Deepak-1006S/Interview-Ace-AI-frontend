@@ -61,8 +61,13 @@ const Dashboard = () => {
           api.get('/interviews'),
           api.get('/users/stats'),
         ]);
-        setInterviews(interviewsRes.data.interviews);
-        setStats(statsRes.data.stats);
+        const interviewData = interviewsRes.data;
+        setInterviews(
+          Array.isArray(interviewData)
+            ? interviewData
+            : interviewData?.interviews || []
+        );
+        setStats(statsRes.data?.stats || statsRes.data);
       } catch {
         toast.error('Failed to load dashboard data');
       } finally {

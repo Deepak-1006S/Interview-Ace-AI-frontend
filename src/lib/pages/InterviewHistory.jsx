@@ -171,13 +171,13 @@ const InterviewHistory = () => {
     const fetchAll = async () => {
       try {
         const { data } = await api.get('/interviews?limit=50');
-        // Fetch full interview data including questions for completed ones
+        const list = Array.isArray(data) ? data : data?.interviews || [];
         const detailed = await Promise.all(
-          data.interviews.filter(i => i.status === 'completed').slice(0, 20).map(i =>
-            api.get(`/interviews/${i._id}`).then(r => r.data.interview).catch(() => i)
+          list.filter(i => i.status === 'completed').slice(0, 20).map(i =>
+            api.get(`/interviews/${i._id}`).then(r => r.data?.interview || r.data).catch(() => i)
           )
         );
-        const pendingOnes = data.interviews.filter(i => i.status !== 'completed');
+        const pendingOnes = list.filter(i => i.status !== 'completed');
         setInterviews([...detailed, ...pendingOnes].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
       } catch { toast.error('Failed to load interview history'); }
       finally { setLoading(false); }
@@ -187,7 +187,7 @@ const InterviewHistory = () => {
 
   const filtered = interviews
     .filter((i) => {
-      const matchSearch = !search || i.title.toLowerCase().includes(search.toLowerCase()) || i.jobRole.toLowerCase().includes(search.toLowerCase());
+      const matchSearch = !search || i.title?.toLowerCase().includes(search.toLowerCase()) || i.jobRole?.toLowerCase().includes(search.toLowerCase());
       const matchStatus = filterStatus === 'all' || i.status === filterStatus;
       return matchSearch && matchStatus;
     })

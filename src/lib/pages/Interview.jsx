@@ -166,7 +166,7 @@ const TimerBar = ({ timer }) => {
 const QuestionSession = ({ interview, onComplete }) => {
   const [currentIndex, setCurrentIndex] = useState(interview.lastSavedIndex || 0);
   const [answers, setAnswers] = useState(
-    interview.questions.map((q) => q.userAnswer || '')
+    (interview.questions || []).map((q) => q.userAnswer || '')
   );
   const [submitting, setSubmitting] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -287,7 +287,7 @@ const QuestionSession = ({ interview, onComplete }) => {
         answers,
         duration: timer.elapsedMinutes,
       });
-      onComplete(data.interview);
+      onComplete(data?.interview || data);
     } catch {
       toast.error('Failed to submit. Please try again.');
       setSubmitting(false);
@@ -295,8 +295,15 @@ const QuestionSession = ({ interview, onComplete }) => {
     }
   };
 
-  const question = interview.questions[currentIndex];
-  const totalQuestions = interview.questions.length;
+  const question = interview.questions?.[currentIndex];
+  const totalQuestions = interview.questions?.length || 0;
+  if (!question) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <p className="text-gray-400">No questions found for this interview.</p>
+      </div>
+    );
+  }
   const progress = ((currentIndex + 1) / totalQuestions) * 100;
 
   const categoryColor = {
@@ -600,8 +607,9 @@ const Interview = () => {
     if (!id) return;
     api.get(`/interviews/${id}`)
       .then(({ data }) => {
-        setInterview(data.interview);
-        setStep(data.interview.status === 'completed' ? 'results' : 'session');
+        const interviewData = data?.interview || data;
+        setInterview(interviewData);
+        setStep(interviewData.status === 'completed' ? 'results' : 'session');
       })
       .catch(() => {
         toast.error('Interview not found');
@@ -614,13 +622,16 @@ const Interview = () => {
     try {
       const { data } = await api.post('/interviews', {
         ...formData,
+        targetRole: formData.jobRole,
         useAI: formData.jobDescription?.length > 50,
       });
-      setInterview(data.interview);
+      const interviewData = data?.interview || data;
+      setInterview(interviewData);
       setStep('session');
-      navigate(`/interview/${data.interview._id}`, { replace: true });
-    } catch {
-      toast.error('Failed to create interview session');
+      navigate(`/interview/${interviewData._id}`, { replace: true });
+    } catch (err) {
+      const message = err.response?.data?.message || err.message || 'Failed to create interview session';
+      toast.error(message);
     } finally {
       setCreating(false);
     }
