@@ -11,7 +11,7 @@ export default defineConfig({
     changeOrigin: true,
       },
       '/socket.io': {
-        target: 'http://localhost:5000',  // ← must be 5000
+        target: 'https://interview-ace-ai-backend.onrender.com',  // ← must be 5000
         changeOrigin: true,
         ws: true,
       },
