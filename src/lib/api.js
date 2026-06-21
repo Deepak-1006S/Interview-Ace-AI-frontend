@@ -1,7 +1,10 @@
 import axios from 'axios';
 
+// Use Vite env var `VITE_API_URL` in production. In dev the proxy (`/api/v1`) works.
+const BASE = import.meta.env.VITE_API_URL || '/api/v1';
+
 const api = axios.create({
-  baseURL: '/api/v1',  // Vite proxy handles this in dev
+  baseURL: BASE,
 });
 
 // Attach token to every request
@@ -34,7 +37,8 @@ api.interceptors.response.use(
     if (err.response?.status === 401 && !err.config._retry) {
       err.config._retry = true;
       const refresh = localStorage.getItem('refreshToken');
-      const { data } = await axios.post('/api/v1/auth/refresh', { refreshToken: refresh });
+      const refreshUrl = (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/\/$/, '') : '') + '/auth/refresh';
+      const { data } = await axios.post(refreshUrl || '/api/v1/auth/refresh', { refreshToken: refresh });
       // `data` here is the raw axios response; follow backend wrapper
       const refreshed = data?.data ?? data;
       localStorage.setItem('accessToken', refreshed.accessToken);
